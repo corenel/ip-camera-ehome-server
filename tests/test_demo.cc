@@ -9,14 +9,14 @@ int main() {
   NET_ESTREAM_Init();
   //预览的监听参数
   NET_EHOME_LISTEN_PREVIEW_CFG struListen = {0};
-  memcpy(struListen.struIPAdress.szIP, PREVIEW_STREAM_SERVER_IP,
-         sizeof(PREVIEW_STREAM_SERVER_IP));
+  memcpy(struListen.struIPAdress.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
+         sizeof(SMS_PREVIEW_STREAM_SERVER_IP));
   // SMS 的监听端口号
-  struListen.struIPAdress.wPort = PREVIEW_STREAM_SERVER_PORT;
+  struListen.struIPAdress.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
   struListen.fnNewLinkCB = fnPREVIEW_NEWLINK_CB;
   //预览请求回调函数
   struListen.pUser = nullptr;
-  struListen.byLinkMode = PREVIEW_LINK_MODE;  // 0-TCP, 1-UDP
+  struListen.byLinkMode = SMS_PREVIEW_LINK_MODE;  // 0-TCP, 1-UDP
 
   //开启监听
   LONG lHandle = NET_ESTREAM_StartListenPreview(&struListen);
@@ -29,7 +29,6 @@ int main() {
   printf("NET_ESTREAM_StartListenPreview!\n");
 
   //注册和预览请求
-
   //初始化 CMS 库
   NET_ECMS_Init();
 
@@ -63,16 +62,16 @@ int main() {
   //预览请求的输入参数
   NET_EHOME_PREVIEWINFO_IN_V11 struPreviewIn = {0};
   //通道号
-  struPreviewIn.iChannel = PREVIEW_CHANNEL;
+  struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
   // 0-TCP, 1-UDP
-  struPreviewIn.dwLinkMode = PREVIEW_LINK_MODE;
+  struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
   //码流类型：0-主码流，1-子码流 2-第三码流
-  struPreviewIn.dwStreamType = PREVIEW_STREAM_TYPE;
+  struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
   // SMS 的 IP 地址
-  memcpy(struPreviewIn.struStreamSever.szIP, PREVIEW_STREAM_SERVER_IP,
-         sizeof(PREVIEW_STREAM_SERVER_IP));
+  memcpy(struPreviewIn.struStreamSever.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
+         sizeof(SMS_PREVIEW_STREAM_SERVER_IP));
   // SMS 的端口号，需和监听端口号一致
-  struPreviewIn.struStreamSever.wPort = PREVIEW_STREAM_SERVER_PORT;
+  struPreviewIn.struStreamSever.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
 
   //预览请求的输出参数
   NET_EHOME_PREVIEWINFO_OUT struPreviewOut = {0};

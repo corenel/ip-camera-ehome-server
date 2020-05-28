@@ -21,7 +21,7 @@ LONG lLoginID = -1;
 LONG lLinkHandle = -1;
 LONG lRealHandle = -1;
 FILE *Videofile = nullptr;
-LONG m_lPort = PREVIEW_STREAM_SERVER_PORT;
+LONG m_lPort = SMS_PREVIEW_STREAM_SERVER_PORT;
 
 BOOL CALLBACK RegisterCallBack(LONG lUserID, DWORD dwDataType, void *pOutBuffer,
                                DWORD dwOutLen, void *pInBuffer, DWORD dwInLen,

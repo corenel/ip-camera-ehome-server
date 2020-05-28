@@ -9,23 +9,32 @@
 #define SDK_TYPE SDK_EHOME
 #endif
 
-// Preview
+// SMS
 // 通道号
-#define PREVIEW_CHANNEL 1
+#define SMS_PREVIEW_CHANNEL 1
 // 0-TCP, 1-UDP
 #define LINK_MODE_TCP 0
 #define LINK_MODE_UDP 1
-#define PREVIEW_LINK_MODE LINK_MODE_TCP
+#define SMS_PREVIEW_LINK_MODE LINK_MODE_TCP
 // 码流类型：0- 主码流，1- 子码流, 2- 第三码流
 #define STREAM_TYPE_MAIN 0
 #define STREAM_TYPE_SUB 1
 #define STREAM_TYPE_THIRD 2
-#define PREVIEW_STREAM_TYPE STREAM_TYPE_MAIN
+#define SMS_PREVIEW_STREAM_TYPE STREAM_TYPE_MAIN
 // SMS 的 IP 地址
-#define PREVIEW_STREAM_SERVER_IP "192.168.199.5"
+#define SMS_PREVIEW_STREAM_SERVER_IP "192.168.199.5"
 // SMS 的端口号，需和监听端口号一致
-#define PREVIEW_STREAM_SERVER_PORT 8003
+#define SMS_PREVIEW_STREAM_SERVER_PORT 8003
 
-// Register
+// CMS
 #define CMS_LISTEN_IP "0.0.0.0"
 #define CMS_LISTEN_PORT 7660
+
+// IPCamera
+#define IPCS_MAX_NUM 32
+#define IPCS_EPOLL_WAIT_TIME 5000  // ms
+#define IPCS_HEARTBEAT_INVL 4000000  // us  // 4s cause the delay of the internet
+#define IPCS_PUSHING_STREAM 1
+#define IPCS_NOT_PUSHING_STREAM 0
+#define IPCS_ONLINE 1
+#define IPCS_OFFLINE 0

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(ices)
 
 # set compilation
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_definitions(-Wall -Wextra -O2)
@@ -76,3 +76,4 @@ target_link_libraries(
 
 # tests
 add_simple_test(test_demo)
+add_simple_test(test_demo_neo)
