@@ -35,4 +35,4 @@
 .idea
 .tags
 cmake-build-*
-!thirdparty/HCISUPSDK/lib/*.so
+!thirdparty/*/lib/*.so

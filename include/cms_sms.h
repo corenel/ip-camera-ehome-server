@@ -7,9 +7,14 @@
 #include <cstring>
 #include <ctime>
 
+#include "config.h"
+#if (SDK_TYPE == SDK_ISUP)
 #include "HCISUPCMS.h"
 #include "HCISUPStream.h"
-#include "config.h"
+#else
+#include "HCEHomeCMS.h"
+#include "HCEHomeStream.h"
+#endif
 #include "PlayM4.h"
 
 LONG lLoginID = -1;

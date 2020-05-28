@@ -1,5 +1,14 @@
 #pragma once
 
+// SDK
+#define SDK_ISUP 0
+#define SDK_EHOME 1
+#ifndef USE_EHOME
+#define SDK_TYPE SDK_ISUP
+#else
+#define SDK_TYPE SDK_EHOME
+#endif
+
 // Preview
 // 通道号
 #define PREVIEW_CHANNEL 1
@@ -20,4 +29,3 @@
 // Register
 #define CMS_LISTEN_IP "0.0.0.0"
 #define CMS_LISTEN_PORT 7660
-

@@ -29,19 +29,19 @@ BOOL CALLBACK RegisterCallBack(LONG lUserID, DWORD dwDataType, void *pOutBuffer,
     auto *pDevInfo = (NET_EHOME_DEV_REG_INFO *)pOutBuffer;
     if (pDevInfo != nullptr) {
       lLoginID = lUserID;
-
-      printf("On-line, lUserID: %d, Device ID: %s, DevProtocolVersion: %s\n",
-             lLoginID, pDevInfo->byDeviceID, pDevInfo->byDevProtocolVersion);
+      printf("On-line, lUserID: %d, Device ID: %s\n", lLoginID,
+             pDevInfo->byDeviceID);
     }
 
     //输入参数
     auto *pServerInfo = (NET_EHOME_SERVER_INFO *)pInBuffer;
-    pServerInfo->dwTimeOutCount = 6;   //心跳超时次数
+    pServerInfo->dwTimeOutCount = 6;  //心跳超时次数
     pServerInfo->dwKeepAliveSec = 5;  //心跳间隔
 
   } else if (ENUM_DEV_OFF == dwDataType) {
     printf("Off-line, lUserID: %d\n", lUserID);
     NET_ECMS_ForceLogout(lUserID);
+#if (SDK_TYPE == SDK_ISUP)
   } else if (ENUM_DEV_AUTH == dwDataType) {  //对于支持 5.0 版本 ISUP
                                              //设备的认证，必须设置认证密钥
     auto *pDevInfo = (NET_EHOME_DEV_REG_INFO_V12 *)pOutBuffer;
@@ -64,6 +64,7 @@ BOOL CALLBACK RegisterCallBack(LONG lUserID, DWORD dwDataType, void *pOutBuffer,
     memcpy(struSessionkey.sSessionKey, pDevInfo->struRegInfo.bySessionKey,
            MAX_MASTER_KEY_LEN);
     NET_ECMS_SetDeviceSessionKey(&struSessionkey);
+#endif
   } else {  //...
   }
   return TRUE;
@@ -149,7 +150,9 @@ BOOL CALLBACK fnPREVIEW_NEWLINK_CB(LONG lPreviewHandle,
   //预览数据的回调参数
   NET_EHOME_PREVIEW_DATA_CB_PARAM struDataCB = {0};
   struDataCB.fnPreviewDataCB = fnPREVIEW_DATA_CB;
+#if (SDK_TYPE == SDK_ISUP)
   struDataCB.byStreamFormat = 0;  //封装格式：0-PS 格式
+#endif
 
   if (!NET_ESTREAM_SetPreviewDataCB(lPreviewHandle, &struDataCB)) {
     printf("NET_ESTREAM_SetPreviewDataCB failed, error code: %d\n",
