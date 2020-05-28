@@ -27,16 +27,17 @@ BOOL CALLBACK RegisterCallBack(LONG lUserID, DWORD dwDataType, void *pOutBuffer,
                                void *pUser) {
   if (ENUM_DEV_ON == dwDataType) {
     auto *pDevInfo = (NET_EHOME_DEV_REG_INFO *)pOutBuffer;
-
     if (pDevInfo != nullptr) {
       lLoginID = lUserID;
 
       printf("On-line, lUserID: %d, Device ID: %s, DevProtocolVersion: %s\n",
              lLoginID, pDevInfo->byDeviceID, pDevInfo->byDevProtocolVersion);
-    }  //输入参数
+    }
+
+    //输入参数
     auto *pServerInfo = (NET_EHOME_SERVER_INFO *)pInBuffer;
     pServerInfo->dwTimeOutCount = 6;   //心跳超时次数
-    pServerInfo->dwKeepAliveSec = 15;  //心跳间隔
+    pServerInfo->dwKeepAliveSec = 5;  //心跳间隔
 
   } else if (ENUM_DEV_OFF == dwDataType) {
     printf("Off-line, lUserID: %d\n", lUserID);
@@ -126,9 +127,7 @@ BOOL InputStreamData(BYTE byDataType, char *pBuffer, int iDataLen) {
 void CALLBACK fnPREVIEW_DATA_CB(LONG lPreviewHandle,
                                 NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg,
                                 void *pUserData) {
-  if (nullptr == pPreviewCBMsg)
-
-  {
+  if (nullptr == pPreviewCBMsg) {
     return;
   }
 
