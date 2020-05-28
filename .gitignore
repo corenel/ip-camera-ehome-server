@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# project-specific
+.idea
+.tags
+cmake-build-*
+!thirdparty/HCISUPSDK/lib/*.so
