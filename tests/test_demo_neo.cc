@@ -4,9 +4,11 @@
 #include "ip_camera_manager.h"
 
 LONG lListen, lHandle;
+BOOL stop_flag = false;
 
 void Stop(int sig) {
   //登出
+  stop_flag = true;
 
   //释放被 CMS 预览请求占用的资源
   for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
@@ -101,7 +103,7 @@ int main() {
   // Register signals
   signal(SIGINT, Stop);
 
-  while (true) {
+  while (!stop_flag) {
     // The following operations should be done when the
     // registration is completed
     sleep(1);
@@ -133,8 +135,9 @@ int main() {
           NET_ECMS_Fini();
           return 1;
         }
+        printf("NET_ECMS_StartGetRealStreamV11 with ID %d!\n",
+               struPreviewOut.lSessionID);
         cameras_[i].preview_session_id = struPreviewOut.lSessionID;
-        printf("NET_ECMS_StartGetRealStreamV11!\n");
 
         //码流传输请求的输入参数
         NET_EHOME_PUSHSTREAM_IN struPushStreamIn = {0};

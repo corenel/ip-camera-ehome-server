@@ -15,7 +15,7 @@
 // 0-TCP, 1-UDP
 #define LINK_MODE_TCP 0
 #define LINK_MODE_UDP 1
-#define SMS_PREVIEW_LINK_MODE LINK_MODE_TCP
+#define SMS_PREVIEW_LINK_MODE LINK_MODE_UDP
 // 码流类型：0- 主码流，1- 子码流, 2- 第三码流
 #define STREAM_TYPE_MAIN 0
 #define STREAM_TYPE_SUB 1
