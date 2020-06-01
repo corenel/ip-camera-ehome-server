@@ -38,7 +38,8 @@ typedef enum tagNET_EHOME_REGISTER_TYPE
     ENUM_DEV_DAS_REREGISTER,            //设备重注册回调
     ENUM_DEV_DAS_PINGREO,               //设备注册心跳
     ENUM_DEV_DAS_EHOMEKEY_ERROR,        //校验密码失败
-    ENUM_DEV_SESSIONKEY_ERROR           //Sessionkey交互异常
+    ENUM_DEV_SESSIONKEY_ERROR,           //Sessionkey交互异常
+    ENUM_DEV_SLEEP = 11           //设备进入休眠状态（注：休眠状态下，设备无法做预览、回放、语音对讲、配置等CMS中的信令作响应；设备可通过NET_ECMS_WakeUp接口进行唤醒）
 }NET_EHOME_REGISTER_TYPE;
 
 //语音对讲编码类型
@@ -812,6 +813,7 @@ NET_DVR_API BOOL CALLBACK NET_ECMS_StopGetRealStreamEx(LONG lUserID, LPNET_EHOME
 NET_DVR_API BOOL CALLBACK NET_ECMS_StartPushRealStream(LONG lUserID, LPNET_EHOME_PUSHSTREAM_IN pPushInfoIn, LPNET_EHOME_PUSHSTREAM_OUT pPushInfoOut);
 NET_DVR_API BOOL CALLBACK NET_ECMS_MakeIFrame(LONG lUserID, LPNET_EHOME_MAKE_I_FRAME pIFrameParma);
 NET_DVR_API BOOL CALLBACK NET_ECMS_SetStreamEncrypt(LONG lUserID, LPNET_EHOME_STREAM_PASSWORD pStreamPassword);
+NET_DVR_API BOOL CALLBACK NET_ECMS_WakeUp(LONG lUserID);
 
 //查询接口
 #define MAX_FILE_NAME_LEN  100
@@ -1684,7 +1686,8 @@ typedef struct tagNET_EHOME_LONG_CFG_SEND
 #define NET_EHOME_S2C_GET_COMPONENT		            0x116 	        //获取终端组件信息
 
 #define NET_EHOME_S2C_PUBLISH_XML                   0x200           //日程、插播、升级XML透传（公安平台专用）
-#define NET_EHOME_S2C_SCREEN_SHOT                   0x201           //终端截屏（公安平台专用）
+#define NET_EHOME_S2C_SCREEN_SHOT                   0x201           //终端截屏（公安平台专用，如果为双面屏终端，表示截主屏）
+#define NET_EHOME_S2C_SCREEN_SHOT_SECOND                   0x202           //终端截屏（双面屏终端截屏，截辅屏）
 
 #define NET_EHOME_S2C_GET_VCA_VERSION               0x100034        //获取智能库版本号
 

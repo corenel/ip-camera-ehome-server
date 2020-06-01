@@ -8,9 +8,9 @@
 #define   MAX_FILE_PATH  260  //最大文件路径长度
 
 /* 升级状态 */
-#define	NET_SDK_UPG_STATUS_SUCCESS		1000   //代表升级成功
-#define NET_SDK_UPG_STATUS_PROCESSING	1001   //代表正在升级
-#define	NET_SDK_UPG_STATUS_FAILED		1002   //代表升级失败
+#define NET_SDK_UPG_STATUS_SUCCESS    1000   //代表升级成功
+#define NET_SDK_UPG_STATUS_PROCESSING 1001   //代表正在升级
+#define NET_SDK_UPG_STATUS_FAILED   1002   //代表升级失败
 #define NET_SDK_UPG_EXTRACT_FAILED      1003    //代表解压缩失败升级失败
 #define NET_SDK_UPG_APK_VERSION_FAILED  1004    //代表APK版本不匹配升级失败
 #define NET_SDK_UPG_ROM_VERSION_FAILED  1005   //代表ROM版本不匹配升级失败
@@ -19,8 +19,8 @@
 #define NET_SDK_UPG_PKG_VER_SUCCESS     1008   //升级包校验成功
 
 //信息发布交互状态
-#define	NET_SDK_INFO_PUBLISH_PROCESSING		 1   //信息发布中
-#define	NET_SDK_INFO_PUBLISH_FAILED		 2   //信息发布失败
+#define NET_SDK_INFO_PUBLISH_PROCESSING    1   //信息发布中
+#define NET_SDK_INFO_PUBLISH_FAILED    2   //信息发布失败
 #define NET_SDK_INFO_PUBLISH_NO_MEMORY   3    //存储空间不足
 #define NET_SDK_INFO_PUBLISH_CANCEL      4    //取消日程发布
 #define NET_SDK_INFO_PUBLISH_LEN_FAILED  6   //接收长度失败
@@ -37,7 +37,7 @@ typedef struct
     BYTE  byRes[16];
 }NET_EHOME_SCHEDULE_PUBLISH_HEAD;
 
-//日程发布单文件 
+//日程发布单文件
 typedef struct
 {
     DWORD dwFileType;    /* 1-日程xml，2-节目xml，3-素材xml，4-素材内容，5-素材文件发送完成 6-xml发送完成 7-页面-xml*/
@@ -50,7 +50,7 @@ typedef struct
     char  szFilePath[MAX_FILE_PATH];     // 素材文件路径（dwFileType为4时有效）
 }NET_EHOME_PUBLISH_SINGLE_FILE;
 
-//日程发布文件 
+//日程发布文件
 typedef struct
 {
     WORD wFileNumber;  // 文件数量

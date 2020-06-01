@@ -1,5 +1,5 @@
 #ifndef _HC_EHOME_PUBLIC_H_
-#define _HC_EHOME_PUBLIC_H_ 
+#define _HC_EHOME_PUBLIC_H_
 
 //多SDK公共定义
 #ifndef _HC_NET_SDK_H_
@@ -44,10 +44,10 @@
 #endif
 
 #if defined(__LP64__)
-#define OS_POSIX64    1 
+#define OS_POSIX64    1
 #endif
 
-/*******************平台相关的数据类型定义 end**********************/    
+/*******************平台相关的数据类型定义 end**********************/
 
 /*******************全局错误码 begin**********************/
 #define NET_DVR_NOERROR                 0   //没有错误
@@ -129,11 +129,16 @@
 #define NET_SS_CLIENT_ERR_CLOUD_BESTNODE_FAIL  3604 //云存储协议,获取最优节点失败
 #define NET_SS_CLIENT_ERR_DOWNLOAD_PIC_FAIL     3605   //EHome5.0存储协议,下载图片失败
 #define NET_SS_CLIENT_ERR_DELETE_PIC_FAIL 3606     //EHome5.0存储协议,删除图片失败
-#define NET_SS_CLIENT_ERR_PROTO_UNSAFE  3607    // [add] by yangzheng 2020/03/13 EHome5.0, storage server in security mode, nonsupport unsafe protocol VRB/Tomcat 
+#define NET_SS_CLIENT_ERR_PROTO_UNSAFE  3607    // [add] by yangzheng 2020/03/13 EHome5.0, storage server in security mode, nonsupport unsafe protocol VRB/Tomcat
 #define NET_SS_CLIENT_ERR_FILE_INEXISTED  3608 // [add] by yangzheng 2020/03/13 EHome5.0, delete or download file not existed
 #define NET_SS_CLIENT_ERR_AUTH_FAILED  3609 // [add] by yangzheng 2020/03/13 authentication failed
 
-/*******************全局错误码 begin**********************/    
+//休眠唤醒错误码段   8301~8330
+#define NET_ERR_DEV_SLEEP               8301    //设备已休眠
+#define NET_ERR_DEV_GOINGTOSLEEP        8302    //当前设备处于执行休眠动作的过程中（预计13S），即将进入休眠状态，此时无法进行NET_ECMS_WakeUp接口的唤醒操作；直至执行休眠动作结束，正式进入休眠状态才可正常调用唤醒接口
+
+
+/*******************全局错误码 begin**********************/
 #define MAX_PASSWD_LEN          32
 #define NAME_LEN                32      //用户名长度
 
@@ -151,7 +156,7 @@
 
 typedef struct tagNET_EHOME_IPADDRESS
 {
-    char szIP[128]; 
+    char szIP[128];
     WORD wPort;     //端口
     char byRes[2];
 }NET_EHOME_IPADDRESS, *LPNET_EHOME_IPADDRESS;
