@@ -44,6 +44,21 @@ BOOL CALLBACK RegistrationCallBack(LONG lUserID, DWORD dwDataType,
     pServerInfo->dwTimeOutCount = 6;  //心跳超时次数
     pServerInfo->dwKeepAliveSec = 5;  //心跳间隔
 
+    //获取设备信息
+    NET_EHOME_DEVICE_INFO struDevInfo = {0};
+    struDevInfo.dwSize = sizeof(NET_EHOME_DEVICE_INFO);
+    NET_EHOME_CONFIG struCfg = {0};
+    struCfg.pOutBuf = &struDevInfo;
+    struCfg.dwOutSize = sizeof(NET_EHOME_DEVICE_INFO);
+    if (!NET_ECMS_GetDevConfig(lUserID, NET_EHOME_GET_DEVICE_INFO, &struCfg,
+                               sizeof(NET_EHOME_CONFIG))) {
+      printf("NET_ECMS_GetDevConfig failed, error code: %d\n",
+             NET_ECMS_GetLastError());
+    } else {
+      printf("\tSN: %s", struDevInfo.sSerialNumber);
+      printf("\tStartChannel : %d", struDevInfo.dwStartChannel);
+    }
+
   } else if (ENUM_DEV_OFF == dwDataType) {
     printf("Off-line, lUserID: %d\n", lUserID);
     NET_ECMS_ForceLogout(lUserID);
@@ -177,7 +192,7 @@ BOOL CALLBACK PreviewNewLinkCallback(LONG lPreviewHandle,
              NET_ESTREAM_GetLastError());
       return FALSE;
     }
-    printf("NET_ESTREAM_SetPreviewDataCB!\n");
+    printf("NET_ESTREAM_SetPreviewDataCB succeed!\n");
 
     return TRUE;
   } else {

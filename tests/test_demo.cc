@@ -60,7 +60,7 @@ int main() {
   }
 
   //预览请求的输入参数
-  NET_EHOME_PREVIEWINFO_IN_V11 struPreviewIn = {0};
+  NET_EHOME_PREVIEWINFO_IN struPreviewIn = {0};
   //通道号
   struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
   // 0-TCP, 1-UDP
@@ -77,14 +77,14 @@ int main() {
   NET_EHOME_PREVIEWINFO_OUT struPreviewOut = {0};
 
   //预览请求
-  if (!NET_ECMS_StartGetRealStreamV11(lLoginID, &struPreviewIn,
+  if (!NET_ECMS_StartGetRealStream(lLoginID, &struPreviewIn,
                                       &struPreviewOut)) {
-    printf("NET_ECMS_StartGetRealStreamV11 failed, error code: %d\n",
+    printf("NET_ECMS_StartGetRealStream failed, error code: %d\n",
            NET_ECMS_GetLastError());
     NET_ECMS_Fini();
     return 1;
   }
-  printf("NET_ECMS_StartGetRealStreamV11!\n");
+  printf("NET_ECMS_StartGetRealStream!\n");
 
   //码流传输请求的输入参数
   NET_EHOME_PUSHSTREAM_IN struPushStreamIn = {0};
