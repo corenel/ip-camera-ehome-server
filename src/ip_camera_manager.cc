@@ -1,5 +1,7 @@
 #include "ip_camera_manager.h"
 
+#include "util.h"
+
 void CALLBACK DecodeCallback(int nPort, char *pBuf, int nSize,
                              FRAME_INFO *pFrameInfo, void *nUser,
                              int nReserved2) {
@@ -37,6 +39,9 @@ BOOL CALLBACK RegistrationCallBack(LONG lUserID, DWORD dwDataType,
       cameras_[lUserID].online_state = IPCS_ONLINE;
       printf("On-line, lUserID: %d, Device ID: %s\n", lUserID,
              pDevInfo->byDeviceID);
+      printf("\tIP: %s\n", pDevInfo->struDevAdd.szIP);
+      printf("\tSN: %s\n", pDevInfo->sDeviceSerial);
+      printf("\tProtocol Version: %s\n", pDevInfo->byDevProtocolVersion);
     }
 
     //输入参数
@@ -170,6 +175,13 @@ void CALLBACK PreviewDataCallback(LONG lPreviewHandle,
 BOOL CALLBACK PreviewNewLinkCallback(LONG lPreviewHandle,
                                      NET_EHOME_NEWLINK_CB_MSG *pNewLinkCBMsg,
                                      void *pUserData) {
+  //需要将字符串字段转换成GB2312
+  //  DWORD dwConvertLen = 0;
+  //  UTF82A((char *)pNewLinkCBMsg->szDeviceID, (char
+  //  *)pNewLinkCBMsg->szDeviceID,
+  //         MAX_DEVICE_ID_LEN, &dwConvertLen);
+  printf("Newlink from device id %s", pNewLinkCBMsg->szDeviceID);
+
   std::string device_id(
       reinterpret_cast<char const *>(pNewLinkCBMsg->szDeviceID));
   auto it = std::find_if(

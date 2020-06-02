@@ -37,7 +37,15 @@ void Stop(int sig) {
     if (cameras_[i].stream_handle >= 0) {
       if (!NET_ESTREAM_StopPreview(cameras_[i].stream_handle)) {
         printf("NET_ESTREAM_StopPreview failed, error code: %d\n",
-               NET_ECMS_GetLastError());
+               NET_ESTREAM_GetLastError());
+      }
+    }
+    if (cameras_[i].preview_session_id >= 0) {
+      NET_EHOME_STOPSTREAM_PARAM struStopParam = {0};
+      struStopParam.lSessionID = cameras_[i].preview_session_id;
+      if (!NET_ECMS_StopGetRealStreamEx(cameras_[i].login_id, &struStopParam)) {
+        printf("NET_ECMS_StopGetRealStreamEx failed, error code: %d\n",
+               NET_ESTREAM_GetLastError());
       }
     }
   }
@@ -46,7 +54,7 @@ void Stop(int sig) {
   if (lHandle >= 0) {
     if (!NET_ESTREAM_StopListenPreview(lHandle)) {
       printf("NET_ESTREAM_StopListenPreview failed, error code: %d\n",
-             NET_ECMS_GetLastError());
+             NET_ESTREAM_GetLastError());
     }
   }
   //释放被 SMS 占用的资源
@@ -60,11 +68,62 @@ int main() {
   //初始化 CMS 库
   NET_ECMS_Init();
 
+  //使用负载均衡方式必须设置
+  BOOL bSessionKeyReqMod = TRUE;
+  NET_ECMS_SetSDKLocalCfg(SESSIONKEY_REQ_MOD, &bSessionKeyReqMod);
+
+  BYTE m_byCmsSecureAccessType = 0;
+  NET_EHOME_LOCAL_ACCESS_SECURITY struAccessSecure = {0};
+  struAccessSecure.byAccessSecurity = (BYTE)m_byCmsSecureAccessType;
+  if (!NET_ECMS_SetSDKLocalCfg(ACTIVE_ACCESS_SECURITY, &struAccessSecure)) {
+    printf(
+        "NET_ECMS_SetSDKLocalCfg ACTIVE_ACCESS_SECURITY failed, error code: "
+        "%d\n",
+        NET_ECMS_GetLastError());
+  } else {
+    printf("NET_ECMS_SetSDKLocalCfg ACTIVE_ACCESS_SECURITY succeed!\n");
+  }
+
+  NET_EHOME_SET_REREGISTER_MODE struSetReRegisterMode = {0};
+  struSetReRegisterMode.dwSize = sizeof(struSetReRegisterMode);
+  struSetReRegisterMode.dwReRegisterMode = 0;
+
+  if (!NET_ECMS_SetSDKLocalCfg(SET_REREGISTER_MODE, &struSetReRegisterMode)) {
+    printf("Set Reregister failed, error code: %d\n", NET_ECMS_GetLastError());
+  } else {
+    printf("Set Reregister succeed!\n");
+  }
+
+  NET_EHOME_SEND_PARAM struSendParam = {0};
+  struSendParam.dwSize = sizeof(struSendParam);
+  struSendParam.bySendTimes = 3;
+  // CMS开始接收
+  if (!NET_ECMS_SetSDKLocalCfg(SEND_PARAM, &struSendParam)) {
+    printf("NET_ECMS_SetSDKLocalCfg SEND_PARAM failed, error code: %d\n",
+           NET_ECMS_GetLastError());
+  } else {
+    printf("NET_ECMS_SetSDKLocalCfg SEND_PARAM succeed!\n");
+  }
+
+  NET_EHOME_REGISTER_LISTEN_MODE struParam = {0};
+  struParam.dwSize = sizeof(struParam);
+  struParam.dwRegisterListenMode = REGISTER_LISTEN_MODE_ALL;
+  // CMS开始接收
+  if (!NET_ECMS_SetSDKLocalCfg(REGISTER_LISTEN_MODE, &struParam)) {
+    printf(
+        "NET_ECMS_SetSDKLocalCfg register listen mode failed, error code: %d\n",
+        NET_ECMS_GetLastError());
+  } else {
+    printf("NET_ECMS_SetSDKLocalCfg register listen mode succeed!\n");
+  }
+
   //注册的监听参数
   NET_EHOME_CMS_LISTEN_PARAM struCMSListenPara = {0};
   memcpy(struCMSListenPara.struAddress.szIP, CMS_LISTEN_IP, 128);
   struCMSListenPara.struAddress.wPort = CMS_LISTEN_PORT;
   struCMSListenPara.fnCB = RegistrationCallBack;
+  struCMSListenPara.dwKeepAliveSec = 5;
+  struCMSListenPara.dwTimeOutCount = 6;
 
   //开启监听并接收设备注册信息
   lListen = NET_ECMS_StartListen(&struCMSListenPara);
@@ -87,6 +146,17 @@ int main() {
   NET_ESTREAM_Init();
   //  NET_ESTREAM_SetLogToFile((DWORD)5, (char *)"/tmp/",
   //                           FALSE /*m_struLogInfo.bAutoDel*/);
+  BYTE m_byStreamSecureAccessType = 0;
+  struAccessSecure.byAccessSecurity = (BYTE)m_byStreamSecureAccessType;
+  if (!NET_ESTREAM_SetSDKLocalCfg(ACTIVE_ACCESS_SECURITY, &struAccessSecure)) {
+    printf(
+        "NET_ESTREAM_SetSDKLocalCfg ACTIVE_ACCESS_SECURITY failed, error code: "
+        "%d\n",
+        NET_ESTREAM_GetLastError());
+  } else {
+    printf("NET_ESTREAM_SetSDKLocalCfg ACTIVE_ACCESS_SECURITY succeed!\n");
+  }
+
   // 预览的监听参数
   NET_EHOME_LISTEN_PREVIEW_CFG struListen = {0};
   memcpy(struListen.struIPAdress.szIP, CMS_LISTEN_IP, 128);
@@ -120,28 +190,50 @@ int main() {
   while (!stop_flag) {
     // The following operations should be done when the
     // registration is completed
+
     sleep(1);
     for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
       if (cameras_[i].online_state == IPCS_ONLINE &&
           cameras_[i].push_state != IPCS_PUSHING_STREAM) {
-        //预览请求的输入参数
-        NET_EHOME_PREVIEWINFO_IN struPreviewIn = {0};
-        //通道号
-        struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
-        // 0-TCP, 1-UDP
-        struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
-        //码流类型：0-主码流，1-子码流 2-第三码流
-        struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
-        // SMS 的 IP 地址
-        memcpy(struPreviewIn.struStreamSever.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
-               128);
-        // SMS 的端口号，需和监听端口号一致
-        struPreviewIn.struStreamSever.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
-
-        //预览请求的输出参数
-        NET_EHOME_PREVIEWINFO_OUT struPreviewOut = {0};
+        NET_EHOME_XML_CFG struXmlCfg = {0};
+        char sCmd[32] = "GETDEVICECONFIG";
+        char sInBuf[512] =
+            "<Params>\r\n<ConfigCmd>GetDevAbility</ConfigCmd>\r\n<ConfigParam1>1 </ConfigParam1>\r\n\
+                                                      <ConfigParam2></ConfigParam2>\r\n<ConfigParam3></ConfigParam3>\r\n<ConfigParam4></ConfigParam4>\r\n</Params>";
+        char sOutBuf[1024] = {0};
+        char sStatusBuf[1024] = {0};
+        struXmlCfg.dwCmdLen = strlen(sCmd);
+        struXmlCfg.pCmdBuf = sCmd;
+        struXmlCfg.pInBuf = sInBuf;
+        struXmlCfg.pOutBuf = sOutBuf;
+        struXmlCfg.pStatusBuf = sStatusBuf;
+        struXmlCfg.dwInSize = 512;
+        struXmlCfg.dwOutSize = 1024;
+        struXmlCfg.dwStatusSize = 1024;
+        if (!NET_ECMS_XMLConfig(cameras_[i].login_id, &struXmlCfg,
+                                sizeof(NET_EHOME_XML_CFG))) {
+          printf("GetDevAbility failed, error code: %d\n",
+                 NET_ECMS_GetLastError());
+        } else {
+          printf("GetDevAbility succeed!\n");
+          printf("%s\n", sOutBuf);
+        }
 
         //预览请求
+        NET_EHOME_PREVIEWINFO_IN struPreviewIn = {0};
+        NET_EHOME_PREVIEWINFO_OUT struPreviewOut = {0};
+        struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
+        struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
+        struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
+        memcpy(struPreviewIn.struStreamSever.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
+               128);
+        struPreviewIn.struStreamSever.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
+        printf("Preview settings:\n");
+        printf("\tChannel: %d\n", struPreviewIn.iChannel);
+        printf("\tLink mode: %d\n", struPreviewIn.dwLinkMode);
+        printf("\tStream type: %d\n", struPreviewIn.dwStreamType);
+        printf("\tServer IP: %s\n", struPreviewIn.struStreamSever.szIP);
+        printf("\tServer port: %d\n", struPreviewIn.struStreamSever.wPort);
         if (!NET_ECMS_StartGetRealStream(cameras_[i].login_id, &struPreviewIn,
                                          &struPreviewOut)) {
           printf("NET_ECMS_StartGetRealStream failed, error code: %d\n",
@@ -151,20 +243,15 @@ int main() {
         }
         printf("NET_ECMS_StartGetRealStream succeed with ID %d!\n",
                struPreviewOut.lSessionID);
-        cameras_[i].preview_session_id = struPreviewOut.lSessionID;
-
-        //码流传输请求的输入参数
-        NET_EHOME_PUSHSTREAM_IN struPushStreamIn = {0};
-        struPushStreamIn.dwSize = sizeof(struPushStreamIn);
-        struPushStreamIn.lSessionID =
-            struPreviewOut.lSessionID;  //预览请求的会话 ID
-
-        //码流传输请求的输出参数
-        NET_EHOME_PUSHSTREAM_OUT struPushStreamOut = {0};
-        struPushStreamOut.dwSize = sizeof(struPushStreamOut);
 
         // 发送请求给设备并开始传输实时码流，该操作只对支持 4.0 版本及以上
         // ISUP 的设备有效
+        sleep(1);
+        NET_EHOME_PUSHSTREAM_IN struPushStreamIn = {0};
+        struPushStreamIn.dwSize = sizeof(struPushStreamIn);
+        struPushStreamIn.lSessionID = struPreviewOut.lSessionID;
+        NET_EHOME_PUSHSTREAM_OUT struPushStreamOut = {0};
+        struPushStreamOut.dwSize = sizeof(struPushStreamOut);
         if (!NET_ECMS_StartPushRealStream(
                 cameras_[i].login_id, &struPushStreamIn, &struPushStreamOut)) {
           printf("NET_ECMS_StartPushRealStream failed, error code: %d\n",
@@ -173,6 +260,7 @@ int main() {
           return 1;
         }
         printf("NET_ECMS_StartPushRealStream succeed!\n");
+        cameras_[i].preview_session_id = struPreviewOut.lSessionID;
         cameras_[i].push_state = IPCS_PUSHING_STREAM;
       }
     }
