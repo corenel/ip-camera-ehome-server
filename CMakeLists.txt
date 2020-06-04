@@ -82,5 +82,4 @@ target_link_libraries(
 )
 
 # tests
-add_simple_test(test_demo)
 add_simple_test(test_demo_neo)

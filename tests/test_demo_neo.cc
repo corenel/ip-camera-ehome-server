@@ -74,6 +74,7 @@ int main() {
 
   BYTE m_byCmsSecureAccessType = 0;
   NET_EHOME_LOCAL_ACCESS_SECURITY struAccessSecure = {0};
+  struAccessSecure.dwSize = sizeof(struAccessSecure);
   struAccessSecure.byAccessSecurity = (BYTE)m_byCmsSecureAccessType;
   if (!NET_ECMS_SetSDKLocalCfg(ACTIVE_ACCESS_SECURITY, &struAccessSecure)) {
     printf(
@@ -119,7 +120,8 @@ int main() {
 
   //注册的监听参数
   NET_EHOME_CMS_LISTEN_PARAM struCMSListenPara = {0};
-  memcpy(struCMSListenPara.struAddress.szIP, CMS_LISTEN_IP, 128);
+  memcpy(struCMSListenPara.struAddress.szIP, CMS_LISTEN_IP,
+         sizeof(NET_EHOME_IPADDRESS));
   struCMSListenPara.struAddress.wPort = CMS_LISTEN_PORT;
   struCMSListenPara.fnCB = RegistrationCallBack;
   struCMSListenPara.dwKeepAliveSec = 5;
@@ -159,7 +161,8 @@ int main() {
 
   // 预览的监听参数
   NET_EHOME_LISTEN_PREVIEW_CFG struListen = {0};
-  memcpy(struListen.struIPAdress.szIP, CMS_LISTEN_IP, 128);
+  memcpy(struListen.struIPAdress.szIP, CMS_LISTEN_IP,
+         sizeof(NET_EHOME_IPADDRESS));
   // SMS 的监听端口号
   struListen.struIPAdress.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
   struListen.fnNewLinkCB = PreviewNewLinkCallback;
@@ -226,7 +229,7 @@ int main() {
         struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
         struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
         memcpy(struPreviewIn.struStreamSever.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
-               128);
+               sizeof(NET_EHOME_IPADDRESS));
         struPreviewIn.struStreamSever.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
         printf("Preview settings:\n");
         printf("\tChannel: %d\n", struPreviewIn.iChannel);
