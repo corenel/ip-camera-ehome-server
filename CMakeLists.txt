@@ -16,6 +16,13 @@ else (USE_EHOME)
     message("Use ISUP SDK")
 endif (USE_EHOME)
 
+if (${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
+    message("Build with Linux")
+    set(OS_NAME "linux64")
+else ()
+    message("Unsupported system: ${CMAKE_HOST_SYSTEM_NAME}")
+endif (${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
+
 # useful macros
 include(cmake/util.cmake)
 
@@ -26,30 +33,30 @@ find_package(Threads)
 # common include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/${OS_NAME}/include
     ${OpenCV_INCLUDE_DIRS}
 )
 if (USE_EHOME)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCEHOMESDK/include)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCEHOMESDK/${OS_NAME}/include)
 else (USE_EHOME)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCISUPSDK/include)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/include)
 endif (USE_EHOME)
 
 # find all thirdparty libraries
 file(GLOB_RECURSE
     playm4_libs
-    ${PROJECT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/*.so
+    ${PROJECT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/${OS_NAME}/lib/*.so
     )
 if (USE_EHOME)
     file(GLOB_RECURSE
         sdk_libs
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCEHOMESDK/*.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/HCEHOMESDK/${OS_NAME}/lib/*.so
         )
 else (USE_EHOME)
     file(GLOB_RECURSE
         sdk_libs
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/*.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/*/*.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/*.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/*/*.so
         )
 endif (USE_EHOME)
 

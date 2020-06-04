@@ -35,4 +35,4 @@
 .idea
 .tags
 cmake-build-*
-!thirdparty/*/lib/*.so
+!thirdparty/**/*.so
