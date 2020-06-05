@@ -22,9 +22,12 @@
 #define STREAM_TYPE_THIRD 2
 #define SMS_PREVIEW_STREAM_TYPE STREAM_TYPE_MAIN
 // SMS 的 IP 地址
-#define SMS_PREVIEW_STREAM_SERVER_IP "192.168.199.13"
+#define SMS_LISTEN_IP "0.0.0.0"
+#define SMS_PUBLIC_IP "192.168.199.5"
 // SMS 的端口号，需和监听端口号一致
-#define SMS_PREVIEW_STREAM_SERVER_PORT 8000
+#define SMS_LISTEN_PORT 8000
+// 是否录制视频文件
+#define SMS_RECORD true
 
 // CMS
 #define CMS_LISTEN_IP "0.0.0.0"
@@ -32,9 +35,6 @@
 
 // IPCamera
 #define IPCS_MAX_NUM 32
-#define IPCS_EPOLL_WAIT_TIME 5000  // ms
-#define IPCS_HEARTBEAT_INVL \
-  4000000  // us  // 4s cause the delay of the internet
 #define IPCS_PUSHING_STREAM 1
 #define IPCS_NOT_PUSHING_STREAM 0
 #define IPCS_ONLINE 1

@@ -5,20 +5,22 @@
 void CALLBACK DecodeCallback(int nPort, char *pBuf, int nSize,
                              FRAME_INFO *pFrameInfo, void *nUser,
                              int nReserved2) {
+  std::cout << "DecodeCallback, pixfmt: " << pFrameInfo->nType << std::endl;
   if (pFrameInfo->nType == T_YV12) {
     std::cout << "the frame infomation is T_YV12" << std::endl;
-    int *user_id = (int *)nUser;
-    cv::Mat &g_BGRImage = frames_[*user_id];
-    if (g_BGRImage.empty()) {
-      g_BGRImage.create(pFrameInfo->nHeight, pFrameInfo->nWidth, CV_8UC3);
+    auto frame = (cv::Mat *)nUser;
+    if (frame->empty()) {
+      printf("Width: %d, Height: %d, Framerate: %d\n", pFrameInfo->nWidth,
+             pFrameInfo->nHeight, pFrameInfo->dwFrameNum);
+      frame->create(pFrameInfo->nHeight, pFrameInfo->nWidth, CV_8UC3);
     }
     cv::Mat YUVImage(pFrameInfo->nHeight + pFrameInfo->nHeight / 2,
                      pFrameInfo->nWidth, CV_8UC1, (unsigned char *)pBuf);
+    cv::cvtColor(YUVImage, *frame, cv::COLOR_YUV2BGR_YV12);
 
-    cv::cvtColor(YUVImage, g_BGRImage, cv::COLOR_YUV2BGR_YV12);
     std::cout << YUVImage.cols << " " << YUVImage.rows << std::endl;
-    //    cv::imshow("RGBImage", g_BGRImage);
-    //    cv::waitKey(15);
+    cv::imshow("RGBImage", *frame);
+    cv::waitKey(15);
     YUVImage.~Mat();
   }
 }
@@ -41,7 +43,9 @@ BOOL CALLBACK RegistrationCallBack(LONG lUserID, DWORD dwDataType,
              pDevInfo->byDeviceID);
       printf("\tIP: %s\n", pDevInfo->struDevAdd.szIP);
       printf("\tSN: %s\n", pDevInfo->sDeviceSerial);
+#if (SDK_TYPE == SDK_ISUP)
       printf("\tProtocol Version: %s\n", pDevInfo->byDevProtocolVersion);
+#endif
     }
 
     //输入参数
@@ -99,53 +103,56 @@ BOOL CALLBACK RegistrationCallBack(LONG lUserID, DWORD dwDataType,
 //处理实时码流数据
 BOOL ProcessInputStreamData(LONG user_id, BYTE byDataType, char *pBuffer,
                             int iDataLen) {
-  //  if (Videofile == nullptr) {
-  //    Videofile = fopen("Test.mp4", "wb");
-  //
-  //    printf("Save data to file: Test.mp4!\n");
-  //  }
-  //
-  //  if (Videofile != nullptr) {
-  //    fwrite(pBuffer, iDataLen, 1, Videofile);
-  //    //回调实时码流并保存视频文件
-  //  }
+#if (SMS_RECORD)
+  if (video_file_ == nullptr) {
+    video_file_ = fopen("Test.mp4", "wb");
+    printf("Save data to file: Test.mp4!\n");
+  }
+  if (video_file_ != nullptr) {
+    fwrite(pBuffer, iDataLen, 1, video_file_);
+    //回调实时码流并保存视频文件
+  }
+#endif
+
   //调用播放库解码并显示码流实现预览
   if (1 == byDataType) {
     if (!PlayM4_GetPort(&port_)) {
+      printf("PlayM4_GetPort failed, error code: %d!",
+             PlayM4_GetLastError(port_));
       return FALSE;
     }
     if (!PlayM4_SetStreamOpenMode(port_, STREAME_REALTIME)) {
+      printf("PlayM4_SetStreamOpenMode failed, error code: %d!",
+             PlayM4_GetLastError(port_));
       return FALSE;
     }
     //输入头部的前 40 字节
     if (!PlayM4_OpenStream(port_, (unsigned char *)pBuffer, (DWORD)iDataLen,
                            2 * 1024 * 1024)) {
+      printf("PlayM4_OpenStream failed, error code: %d!",
+             PlayM4_GetLastError(port_));
       return FALSE;
     }
-    if (!PlayM4_SetDecCallBackMend(port_, DecodeCallback, &user_id)) {
+    if (!PlayM4_SetDecCallBackMend(port_, DecodeCallback, &frames_[user_id])) {
       printf("PlayM4_InputData failed, error code: %d!",
              PlayM4_GetLastError(port_));
       return FALSE;
     }
     if (!PlayM4_Play(port_, NULL)) {
+      printf("PlayM4_Play failed, error code: %d!", PlayM4_GetLastError(port_));
       return FALSE;
     }
-
   } else {
-    for (int i = 0; i < 1000; i++)
-
-    {
+    int time = 1000;
+    while (time > 0) {
       BOOL bRet =
           PlayM4_InputData(port_, (unsigned char *)pBuffer, (DWORD)iDataLen);
       if (!bRet) {
-        if (i >= 999)
-
-        {
-          printf("PlayM4_InputData failed, error code: %d!",
-                 PlayM4_GetLastError(port_));
-        }
-        sleep(2);
+        usleep(5);
+        time--;
+        continue;
       }
+      break;
     }
   }
   return TRUE;

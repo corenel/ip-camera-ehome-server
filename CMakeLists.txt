@@ -56,7 +56,7 @@ else (USE_EHOME)
     file(GLOB_RECURSE
         sdk_libs
         ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/*.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/*/*.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/HCAapSDKCom/*.so
         )
 endif (USE_EHOME)
 

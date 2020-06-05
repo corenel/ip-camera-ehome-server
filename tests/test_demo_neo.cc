@@ -1,6 +1,7 @@
 #include <csignal>
 #include <cstring>
 
+#include "config.h"
 #include "ip_camera_manager.h"
 
 LONG lListen = -1, lHandle = -1;
@@ -9,6 +10,13 @@ BOOL stop_flag = false;
 void Stop(int sig) {
   //登出
   stop_flag = true;
+
+#if (SMS_RECORD)
+  if (video_file_ != nullptr) {
+    fclose(video_file_);
+    video_file_ = nullptr;
+  }
+#endif
 
   //释放被 CMS 预览请求占用的资源
   for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
@@ -40,6 +48,8 @@ void Stop(int sig) {
                NET_ESTREAM_GetLastError());
       }
     }
+
+#if (SDK_TYPE == SDK_ISUP)
     if (cameras_[i].preview_session_id >= 0) {
       NET_EHOME_STOPSTREAM_PARAM struStopParam = {0};
       struStopParam.lSessionID = cameras_[i].preview_session_id;
@@ -48,6 +58,7 @@ void Stop(int sig) {
                NET_ESTREAM_GetLastError());
       }
     }
+#endif
   }
 
   // SMS 停止监听
@@ -68,6 +79,7 @@ int main() {
   //初始化 CMS 库
   NET_ECMS_Init();
 
+#if (SDK_TYPE == SDK_ISUP)
   //使用负载均衡方式必须设置
   BOOL bSessionKeyReqMod = TRUE;
   NET_ECMS_SetSDKLocalCfg(SESSIONKEY_REQ_MOD, &bSessionKeyReqMod);
@@ -94,6 +106,7 @@ int main() {
   } else {
     printf("Set Reregister succeed!\n");
   }
+#endif
 
   NET_EHOME_SEND_PARAM struSendParam = {0};
   struSendParam.dwSize = sizeof(struSendParam);
@@ -106,6 +119,7 @@ int main() {
     printf("NET_ECMS_SetSDKLocalCfg SEND_PARAM succeed!\n");
   }
 
+#if (SDK_TYPE == SDK_ISUP)
   NET_EHOME_REGISTER_LISTEN_MODE struParam = {0};
   struParam.dwSize = sizeof(struParam);
   struParam.dwRegisterListenMode = REGISTER_LISTEN_MODE_ALL;
@@ -117,6 +131,7 @@ int main() {
   } else {
     printf("NET_ECMS_SetSDKLocalCfg register listen mode succeed!\n");
   }
+#endif
 
   //注册的监听参数
   NET_EHOME_CMS_LISTEN_PARAM struCMSListenPara = {0};
@@ -124,8 +139,10 @@ int main() {
          sizeof(NET_EHOME_IPADDRESS));
   struCMSListenPara.struAddress.wPort = CMS_LISTEN_PORT;
   struCMSListenPara.fnCB = RegistrationCallBack;
+#if (SDK_TYPE == SDK_ISUP)
   struCMSListenPara.dwKeepAliveSec = 5;
   struCMSListenPara.dwTimeOutCount = 6;
+#endif
 
   //开启监听并接收设备注册信息
   lListen = NET_ECMS_StartListen(&struCMSListenPara);
@@ -146,8 +163,8 @@ int main() {
   // SMS 在监听开启后获取码流
   // 初始化 SMS 库
   NET_ESTREAM_Init();
-  //  NET_ESTREAM_SetLogToFile((DWORD)5, (char *)"/tmp/",
-  //                           FALSE /*m_struLogInfo.bAutoDel*/);
+  NET_ESTREAM_SetLogToFile((DWORD)3, (char *)"/tmp/", FALSE);
+#if (SDK_TYPE == SDK_ISUP)
   BYTE m_byStreamSecureAccessType = 0;
   struAccessSecure.byAccessSecurity = (BYTE)m_byStreamSecureAccessType;
   if (!NET_ESTREAM_SetSDKLocalCfg(ACTIVE_ACCESS_SECURITY, &struAccessSecure)) {
@@ -158,13 +175,14 @@ int main() {
   } else {
     printf("NET_ESTREAM_SetSDKLocalCfg ACTIVE_ACCESS_SECURITY succeed!\n");
   }
+#endif
 
   // 预览的监听参数
   NET_EHOME_LISTEN_PREVIEW_CFG struListen = {0};
-  memcpy(struListen.struIPAdress.szIP, CMS_LISTEN_IP,
+  memcpy(struListen.struIPAdress.szIP, SMS_LISTEN_IP,
          sizeof(NET_EHOME_IPADDRESS));
   // SMS 的监听端口号
-  struListen.struIPAdress.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
+  struListen.struIPAdress.wPort = SMS_LISTEN_PORT;
   struListen.fnNewLinkCB = PreviewNewLinkCallback;
   // 预览请求回调函数
   struListen.pUser = nullptr;
@@ -228,9 +246,9 @@ int main() {
         struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
         struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
         struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
-        memcpy(struPreviewIn.struStreamSever.szIP, SMS_PREVIEW_STREAM_SERVER_IP,
+        memcpy(struPreviewIn.struStreamSever.szIP, SMS_PUBLIC_IP,
                sizeof(NET_EHOME_IPADDRESS));
-        struPreviewIn.struStreamSever.wPort = SMS_PREVIEW_STREAM_SERVER_PORT;
+        struPreviewIn.struStreamSever.wPort = SMS_LISTEN_PORT;
         printf("Preview settings:\n");
         printf("\tChannel: %d\n", struPreviewIn.iChannel);
         printf("\tLink mode: %d\n", struPreviewIn.dwLinkMode);
@@ -241,7 +259,6 @@ int main() {
                                          &struPreviewOut)) {
           printf("NET_ECMS_StartGetRealStream failed, error code: %d\n",
                  NET_ECMS_GetLastError());
-          NET_ECMS_Fini();
           return 1;
         }
         printf("NET_ECMS_StartGetRealStream succeed with ID %d!\n",

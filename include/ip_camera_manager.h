@@ -39,7 +39,10 @@ struct IPCamera {
 
 std::vector<IPCamera> cameras_(IPCS_MAX_NUM);
 std::vector<cv::Mat> frames_(IPCS_MAX_NUM);
-LONG port_ = SMS_PREVIEW_STREAM_SERVER_PORT;
+#if (SMS_RECORD)
+FILE *video_file_ = nullptr;
+#endif
+LONG port_ = SMS_LISTEN_PORT;
 
 BOOL CALLBACK RegistrationCallBack(LONG lUserID, DWORD dwDataType,
                                    void *pOutBuffer, DWORD dwOutLen,
