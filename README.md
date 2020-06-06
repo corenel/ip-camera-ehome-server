@@ -77,4 +77,10 @@ $ ./scripts/build.sh
    $ python3 test_python_bindings.py
    ```
 
-   
+
+## To-dos
+
+- [ ] Test with multiple devices
+- [ ] Clean code
+- [ ] Add more detailed documentation
+- [ ] Fix issues with ISUP SDK
