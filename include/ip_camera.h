@@ -4,6 +4,16 @@
 
 #include "config.h"
 
+enum class IPC_REG_STATUS {
+  IPC_OFFLINE = 0,
+  IPC_ONLINE = 1,
+};
+
+enum class IPC_STREAM_STATUS {
+  IPC_NOT_PUSHING_STREAM = 0,
+  IPC_PUSHING_STREAM = 1,
+};
+
 struct IPCamera {
   // 系统分配的登录ID
   long login_id = -1;
@@ -16,7 +26,7 @@ struct IPCamera {
   // 设备IP
   std::string device_ip;
   // 是否在推流
-  char push_state = IPCS_NOT_PUSHING_STREAM;
+  IPC_STREAM_STATUS push_state = IPC_STREAM_STATUS::IPC_NOT_PUSHING_STREAM;
   // 是否在线
-  char online_state = IPCS_OFFLINE;
+  IPC_REG_STATUS online_state = IPC_REG_STATUS::IPC_OFFLINE;
 };

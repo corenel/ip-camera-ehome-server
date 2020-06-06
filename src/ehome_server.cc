@@ -1,7 +1,6 @@
 #include "ehome_server.h"
 
-#include <signal.h>
-
+#include <csignal>
 #include <thread>
 
 EHomeServer *server_ = nullptr;
@@ -13,6 +12,7 @@ EHomeServer::EHomeServer() {
 
   cameras_.resize(IPCS_MAX_NUM);
   frames_.resize(IPCS_MAX_NUM);
+  video_files_.resize(IPCS_MAX_NUM);
 
   InitCMS();
   InitSMS();
@@ -25,14 +25,14 @@ EHomeServer::~EHomeServer() { Stop(); }
 BOOL EHomeServer::Start() {
   StartRegistrationListen();
   StartPreviewListen();
-  thread_ = new std::thread([&]() {
-    while (!stop_flag) {
+  loop_thread_ = new std::thread([&]() {
+    while (!stop_flag_) {
       // The following operations should be done when the
       // registration is completed
       usleep(100000);
       for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
-        if (cameras_[i].online_state == IPCS_ONLINE &&
-            cameras_[i].push_state != IPCS_PUSHING_STREAM) {
+        if (cameras_[i].online_state == IPC_REG_STATUS::IPC_ONLINE &&
+            cameras_[i].push_state != IPC_STREAM_STATUS::IPC_PUSHING_STREAM) {
           NET_EHOME_XML_CFG struXmlCfg = {0};
           char sCmd[32] = "GETDEVICECONFIG";
           char sInBuf[512] =
@@ -99,7 +99,7 @@ BOOL EHomeServer::Start() {
           }
           printf("NET_ECMS_StartPushRealStream succeed!\n");
           cameras_[i].preview_session_id = struPreviewOut.lSessionID;
-          cameras_[i].push_state = IPCS_PUSHING_STREAM;
+          cameras_[i].push_state = IPC_STREAM_STATUS::IPC_PUSHING_STREAM;
         }
       }
     }
@@ -107,10 +107,82 @@ BOOL EHomeServer::Start() {
 }
 
 BOOL EHomeServer::Stop() {
-  stop_flag = TRUE;
-  thread_->join();
+  stop_flag_ = TRUE;
+  loop_thread_->join();
   StopRegistrationListen();
   StopPreviewListen();
+}
+
+BOOL EHomeServer::StopCamera(const int &index) {
+  // 停止录制
+#if (SMS_RECORD)
+  if (video_files_[index] != nullptr) {
+    fclose(video_files_[index]);
+    video_files_[index] = nullptr;
+  }
+#endif
+
+  // 释放被 CMS 预览请求占用的资源
+  if (cameras_[index].preview_session_id >= 0) {
+    if (!NET_ECMS_StopGetRealStream(cameras_[index].login_id,
+                                    cameras_[index].preview_session_id)) {
+      printf("NET_ECMS_StopGetRealStream failed, error code: %d\n",
+             NET_ECMS_GetLastError());
+    }
+  }
+#if (SDK_TYPE == SDK_ISUP)
+  if (cameras_[index].preview_session_id >= 0) {
+    NET_EHOME_STOPSTREAM_PARAM struStopParam = {0};
+    struStopParam.lSessionID = cameras_[index].preview_session_id;
+    if (!NET_ECMS_StopGetRealStreamEx(cameras_[index].login_id,
+                                      &struStopParam)) {
+      printf("NET_ECMS_StopGetRealStreamEx failed, error code: %d\n",
+             NET_ESTREAM_GetLastError());
+    }
+  }
+#endif
+
+  // SMS 停止转发码流
+  if (cameras_[index].stream_handle >= 0) {
+    if (!NET_ESTREAM_StopPreview(cameras_[index].stream_handle)) {
+      printf("NET_ESTREAM_StopPreview failed, error code: %d\n",
+             NET_ESTREAM_GetLastError());
+    }
+    if (!NET_ESTREAM_StopListenPreview(cameras_[index].stream_handle)) {
+      printf("NET_ESTREAM_StopListenPreview failed, error code: %d\n",
+             NET_ESTREAM_GetLastError());
+    }
+  }
+}
+
+IPCamera EHomeServer::GetCamera(const int &index) const {
+  assert(index < IPCS_MAX_NUM);
+  return cameras_[index];
+}
+
+const std::vector<IPCamera> &EHomeServer::GetCameras() const {
+  return cameras_;
+}
+
+cv::Mat EHomeServer::GetFrame(const int &index) const {
+  assert(index < IPCS_MAX_NUM);
+  return frames_[index];
+}
+
+const std::vector<cv::Mat> &EHomeServer::GetFrames() const { return frames_; }
+
+BOOL EHomeServer::IsOnline(const int &index) const {
+  ValidateIndex(index);
+  return cameras_[index].online_state == IPC_REG_STATUS::IPC_ONLINE;
+}
+
+BOOL EHomeServer::IsPushingStream(const int &index) const {
+  ValidateIndex(index);
+  return cameras_[index].push_state == IPC_STREAM_STATUS::IPC_PUSHING_STREAM;
+}
+
+BOOL EHomeServer::ValidateIndex(const int &index) const {
+  assert(index < IPCS_MAX_NUM);
 }
 
 BOOL EHomeServer::InitCMS() {
@@ -218,8 +290,8 @@ BOOL EHomeServer::StartRegistrationListen() {
 #endif
 
   //开启监听并接收设备注册信息
-  lListen = NET_ECMS_StartListen(&struCMSListenPara);
-  if (lListen <= -1) {
+  reg_listen_handle_ = NET_ECMS_StartListen(&struCMSListenPara);
+  if (reg_listen_handle_ <= -1) {
     printf("NET_ECMS_StartListen failed, error code: %d\n",
            NET_ECMS_GetLastError());
     NET_ECMS_Fini();
@@ -231,8 +303,8 @@ BOOL EHomeServer::StartRegistrationListen() {
 
 BOOL EHomeServer::StopRegistrationListen() {
   // CMS 停止监听
-  if (lListen >= 0) {
-    if (!NET_ECMS_StopListen(lListen)) {
+  if (reg_listen_handle_ >= 0) {
+    if (!NET_ECMS_StopListen(reg_listen_handle_)) {
       printf("NET_ECMS_StopListen failed, error code: %d\n",
              NET_ECMS_GetLastError());
     }
@@ -255,8 +327,8 @@ BOOL EHomeServer::StartPreviewListen() {
   struListen.byLinkMode = SMS_PREVIEW_LINK_MODE;  // 0-TCP, 1-UDP
 
   // 开启监听
-  lHandle = NET_ESTREAM_StartListenPreview(&struListen);
-  if (lHandle <= -1) {
+  stream_listen_handle_ = NET_ESTREAM_StartListenPreview(&struListen);
+  if (stream_listen_handle_ <= -1) {
     printf("NET_ESTREAM_StartListenPreview failed, error code: %d\n",
            NET_ESTREAM_GetLastError());
     NET_ESTREAM_Fini();
@@ -266,48 +338,8 @@ BOOL EHomeServer::StartPreviewListen() {
 }
 
 BOOL EHomeServer::StopPreviewListen() {
-#if (SMS_RECORD)
-  if (video_file_ != nullptr) {
-    fclose(video_file_);
-    video_file_ = nullptr;
-  }
-#endif
-
-  //释放被 CMS 预览请求占用的资源
   for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
-    if (cameras_[i].preview_session_id >= 0) {
-      if (!NET_ECMS_StopGetRealStream(cameras_[i].login_id,
-                                      cameras_[i].preview_session_id)) {
-        printf("NET_ECMS_StopGetRealStream failed, error code: %d\n",
-               NET_ECMS_GetLastError());
-      }
-    }
-  }
-
-  // SMS 停止转发码流
-  for (auto i = 0; i < IPCS_MAX_NUM; ++i) {
-    if (cameras_[i].stream_handle >= 0) {
-      if (!NET_ESTREAM_StopPreview(cameras_[i].stream_handle)) {
-        printf("NET_ESTREAM_StopPreview failed, error code: %d\n",
-               NET_ESTREAM_GetLastError());
-      }
-
-      if (!NET_ESTREAM_StopListenPreview(cameras_[i].stream_handle)) {
-        printf("NET_ESTREAM_StopListenPreview failed, error code: %d\n",
-               NET_ESTREAM_GetLastError());
-      }
-    }
-
-#if (SDK_TYPE == SDK_ISUP)
-    if (cameras_[i].preview_session_id >= 0) {
-      NET_EHOME_STOPSTREAM_PARAM struStopParam = {0};
-      struStopParam.lSessionID = cameras_[i].preview_session_id;
-      if (!NET_ECMS_StopGetRealStreamEx(cameras_[i].login_id, &struStopParam)) {
-        printf("NET_ECMS_StopGetRealStreamEx failed, error code: %d\n",
-               NET_ESTREAM_GetLastError());
-      }
-    }
-#endif
+    StopCamera(i);
   }
 }
 
@@ -317,12 +349,12 @@ void EHomeServer::StopHandler(int signum) {
   }
 }
 
-void CALLBACK EHomeServer::DecodeCallback(int nPort, char *pBuf, int nSize,
+void EHomeServer::DecodeCallback(int nPort, char *pBuf, int nSize,
                                           FRAME_INFO *pFrameInfo, void *nUser,
                                           int nReserved2) {
-  std::cout << "DecodeCallback, pixfmt: " << pFrameInfo->nType << std::endl;
+  //  std::cout << "DecodeCallback, pixfmt: " << pFrameInfo->nType << std::endl;
   if (pFrameInfo->nType == T_YV12) {
-    std::cout << "the frame infomation is T_YV12" << std::endl;
+    //    std::cout << "the frame infomation is T_YV12" << std::endl;
     auto frame = (cv::Mat *)nUser;
     if (frame->empty()) {
       printf("Width: %d, Height: %d, Framerate: %d\n", pFrameInfo->nWidth,
@@ -332,8 +364,7 @@ void CALLBACK EHomeServer::DecodeCallback(int nPort, char *pBuf, int nSize,
     cv::Mat YUVImage(pFrameInfo->nHeight + pFrameInfo->nHeight / 2,
                      pFrameInfo->nWidth, CV_8UC1, (unsigned char *)pBuf);
     cv::cvtColor(YUVImage, *frame, cv::COLOR_YUV2BGR_YV12);
-
-    std::cout << YUVImage.cols << " " << YUVImage.rows << std::endl;
+    //    std::cout << YUVImage.cols << " " << YUVImage.rows << std::endl;
     //    cv::imshow("RGBImage", *frame);
     //    cv::waitKey(15);
     YUVImage.~Mat();
@@ -341,7 +372,7 @@ void CALLBACK EHomeServer::DecodeCallback(int nPort, char *pBuf, int nSize,
 }
 
 //注册回调函数
-BOOL CALLBACK EHomeServer::RegistrationCallBack(LONG lUserID, DWORD dwDataType,
+BOOL EHomeServer::RegistrationCallBack(LONG lUserID, DWORD dwDataType,
                                                 void *pOutBuffer,
                                                 DWORD dwOutLen, void *pInBuffer,
                                                 DWORD dwInLen, void *pUser) {
@@ -353,7 +384,7 @@ BOOL CALLBACK EHomeServer::RegistrationCallBack(LONG lUserID, DWORD dwDataType,
           reinterpret_cast<char const *>(pDevInfo->byDeviceID));
       server_->cameras_[lUserID].device_id = device_id;
       server_->cameras_[lUserID].device_ip = pDevInfo->struDevAdd.szIP;
-      server_->cameras_[lUserID].online_state = IPCS_ONLINE;
+      server_->cameras_[lUserID].online_state = IPC_REG_STATUS::IPC_ONLINE;
       printf("On-line, lUserID: %d, Device ID: %s\n", lUserID,
              pDevInfo->byDeviceID);
       printf("\tIP: %s\n", pDevInfo->struDevAdd.szIP);
@@ -419,12 +450,13 @@ BOOL CALLBACK EHomeServer::RegistrationCallBack(LONG lUserID, DWORD dwDataType,
 BOOL EHomeServer::ProcessInputStreamData(LONG user_id, BYTE byDataType,
                                          char *pBuffer, int iDataLen) {
 #if (SMS_RECORD)
-  if (video_file_ == nullptr) {
-    video_file_ = fopen("Test.mp4", "wb");
+  if (video_files_[user_id] == nullptr) {
+    auto filename = "Test_" + std::to_string(user_id) + ".mp4";
+    video_files_[user_id] = fopen(filename.c_str(), "wb");
     printf("Save data to file: Test.mp4!\n");
   }
-  if (video_file_ != nullptr) {
-    fwrite(pBuffer, iDataLen, 1, video_file_);
+  if (video_files_[user_id] != nullptr) {
+    fwrite(pBuffer, iDataLen, 1, video_files_[user_id]);
     //回调实时码流并保存视频文件
   }
 #endif
@@ -474,7 +506,7 @@ BOOL EHomeServer::ProcessInputStreamData(LONG user_id, BYTE byDataType,
 }
 
 //注册实时码流回调函数
-void CALLBACK EHomeServer::PreviewDataCallback(
+void EHomeServer::PreviewDataCallback(
     LONG lPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg,
     void *pUserData) {
   if (nullptr == pPreviewCBMsg) {
@@ -494,7 +526,7 @@ void CALLBACK EHomeServer::PreviewDataCallback(
 }
 
 //注册预览请求的响应回调函数
-BOOL CALLBACK EHomeServer::PreviewNewLinkCallback(
+BOOL EHomeServer::PreviewNewLinkCallback(
     LONG lPreviewHandle, NET_EHOME_NEWLINK_CB_MSG *pNewLinkCBMsg,
     void *pUserData) {
   //需要将字符串字段转换成GB2312

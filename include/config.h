@@ -35,7 +35,3 @@
 
 // IPCamera
 #define IPCS_MAX_NUM 32
-#define IPCS_PUSHING_STREAM 1
-#define IPCS_NOT_PUSHING_STREAM 0
-#define IPCS_ONLINE 1
-#define IPCS_OFFLINE 0
