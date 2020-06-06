@@ -6,7 +6,7 @@ project(ices)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_definitions(-Wall -Wextra -O2)
+add_definitions(-Wall -Wextra -g)
 
 option(USE_EHOME "Use EHome 4.0 SDK instead of ISUP SDK" OFF)
 if (USE_EHOME)

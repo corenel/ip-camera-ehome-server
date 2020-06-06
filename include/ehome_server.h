@@ -2,9 +2,11 @@
 
 #include <unistd.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -27,9 +29,9 @@ class EHomeServer {
   ~EHomeServer();
 
   // Operations
-  BOOL Start();
-  BOOL Stop();
-  BOOL StopCamera(const int &index);
+  void Start();
+  void Stop();
+  void StopCamera(const int &index);
 
   // Getters
   IPCamera GetCamera(const int &index) const;
@@ -38,8 +40,9 @@ class EHomeServer {
   const std::vector<cv::Mat> &GetFrames() const;
 
   // Status
-  BOOL IsOnline(const int &index) const;
-  BOOL IsPushingStream(const int &index) const;
+  bool IsOnline(const int &index) const;
+  bool IsPushingStream(const int &index) const;
+  bool IsReceivingFrame(const int &index) const;
 
  private:
   LONG port_ = SMS_LISTEN_PORT;
@@ -53,10 +56,12 @@ class EHomeServer {
   LONG reg_listen_handle_ = -1;
   LONG stream_listen_handle_ = -1;
 
-  std::thread *loop_thread_ = nullptr;
-  BOOL stop_flag_ = FALSE;
+  std::shared_ptr<std::thread> loop_thread_ = nullptr;
+  std::atomic_bool stop_flag_{false};
 
-  BOOL ValidateIndex(const int &index) const;
+  void EventLoop();
+  void ValidateIndex(const int &index) const;
+
   static BOOL InitCMS();
   static BOOL InitSMS();
   BOOL StartRegistrationListen();
