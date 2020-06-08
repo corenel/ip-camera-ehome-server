@@ -22,6 +22,10 @@ EHomeServer::EHomeServer() {
   signal(SIGINT, EHomeServer::StopHandler);
 }
 
+EHomeServer::EHomeServer(std::string sms_public_ip) : EHomeServer() {
+  sms_public_ip_ = std::move(sms_public_ip);
+}
+
 EHomeServer::~EHomeServer() { Stop(); }
 
 void EHomeServer::Start() {
@@ -153,9 +157,9 @@ void EHomeServer::EventLoop() {
         struPreviewIn.iChannel = SMS_PREVIEW_CHANNEL;
         struPreviewIn.dwLinkMode = SMS_PREVIEW_LINK_MODE;
         struPreviewIn.dwStreamType = SMS_PREVIEW_STREAM_TYPE;
-        memcpy(struPreviewIn.struStreamSever.szIP, SMS_PUBLIC_IP,
+        memcpy(struPreviewIn.struStreamSever.szIP, sms_public_ip_.c_str(),
                sizeof(NET_EHOME_IPADDRESS));
-        struPreviewIn.struStreamSever.wPort = SMS_LISTEN_PORT;
+        struPreviewIn.struStreamSever.wPort = sms_port_;
         printf("Preview settings:\n");
         printf("\tChannel: %d\n", struPreviewIn.iChannel);
         printf("\tLink mode: %d\n", struPreviewIn.dwLinkMode);
@@ -313,6 +317,8 @@ BOOL EHomeServer::StartRegistrationListen() {
     return FALSE;
   }
   printf("NET_ECMS_StartListen succeed!\n");
+  printf("\tIP: %s\n", CMS_LISTEN_IP);
+  printf("\tPort: %d\n", CMS_LISTEN_PORT);
   return TRUE;
 }
 
@@ -337,7 +343,7 @@ BOOL EHomeServer::StartPreviewListen() {
   memcpy(struListen.struIPAdress.szIP, SMS_LISTEN_IP,
          sizeof(NET_EHOME_IPADDRESS));
   // SMS 的监听端口号
-  struListen.struIPAdress.wPort = SMS_LISTEN_PORT;
+  struListen.struIPAdress.wPort = sms_port_;
   struListen.fnNewLinkCB = PreviewNewLinkCallback;
   // 预览请求回调函数
   struListen.pUser = nullptr;
@@ -352,6 +358,9 @@ BOOL EHomeServer::StartPreviewListen() {
     return FALSE;
   }
   printf("NET_ESTREAM_StartListenPreview succeed!\n");
+  printf("\tIP: %s\n", SMS_LISTEN_IP);
+  printf("\tPUBLIC IP: %s\n", sms_public_ip_.c_str());
+  printf("\tPort: %d\n", sms_port_);
   return TRUE;
 }
 
@@ -482,37 +491,39 @@ BOOL EHomeServer::ProcessInputStreamData(LONG user_id, BYTE byDataType,
 
   //调用播放库解码并显示码流实现预览
   if (1 == byDataType) {
-    if (!PlayM4_GetPort(&port_)) {
+    if (!PlayM4_GetPort(&sms_port_)) {
       printf("PlayM4_GetPort failed, error code: %d!",
-             PlayM4_GetLastError(port_));
+             PlayM4_GetLastError(sms_port_));
       return FALSE;
     }
-    if (!PlayM4_SetStreamOpenMode(port_, STREAME_REALTIME)) {
+    if (!PlayM4_SetStreamOpenMode(sms_port_, STREAME_REALTIME)) {
       printf("PlayM4_SetStreamOpenMode failed, error code: %d!",
-             PlayM4_GetLastError(port_));
+             PlayM4_GetLastError(sms_port_));
       return FALSE;
     }
     //输入头部的前 40 字节
-    if (!PlayM4_OpenStream(port_, (unsigned char *)pBuffer, (DWORD)iDataLen,
+    if (!PlayM4_OpenStream(sms_port_, (unsigned char *)pBuffer, (DWORD)iDataLen,
                            2 * 1024 * 1024)) {
       printf("PlayM4_OpenStream failed, error code: %d!",
-             PlayM4_GetLastError(port_));
+             PlayM4_GetLastError(sms_port_));
       return FALSE;
     }
-    if (!PlayM4_SetDecCallBackMend(port_, DecodeCallback, &frames_[user_id])) {
+    if (!PlayM4_SetDecCallBackMend(sms_port_, DecodeCallback,
+                                   &frames_[user_id])) {
       printf("PlayM4_InputData failed, error code: %d!",
-             PlayM4_GetLastError(port_));
+             PlayM4_GetLastError(sms_port_));
       return FALSE;
     }
-    if (!PlayM4_Play(port_, NULL)) {
-      printf("PlayM4_Play failed, error code: %d!", PlayM4_GetLastError(port_));
+    if (!PlayM4_Play(sms_port_, NULL)) {
+      printf("PlayM4_Play failed, error code: %d!",
+             PlayM4_GetLastError(sms_port_));
       return FALSE;
     }
   } else {
     int time = 1000;
     while (time > 0) {
-      BOOL bRet =
-          PlayM4_InputData(port_, (unsigned char *)pBuffer, (DWORD)iDataLen);
+      BOOL bRet = PlayM4_InputData(sms_port_, (unsigned char *)pBuffer,
+                                   (DWORD)iDataLen);
       if (!bRet) {
         usleep(5000);
         time--;

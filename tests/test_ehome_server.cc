@@ -1,7 +1,10 @@
+#include <string>
+
 #include "ices/ehome_server.h"
 
 int main() {
-  EHomeServer server;
+  std::string public_ip = "192.168.199.5";
+  EHomeServer server(public_ip);
   int camera_index = 0;
 
   server.Start();

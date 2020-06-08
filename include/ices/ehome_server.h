@@ -26,6 +26,7 @@
 class EHomeServer {
  public:
   EHomeServer();
+  explicit EHomeServer(std::string sms_server_public_ip);
   ~EHomeServer();
 
   // Operations
@@ -45,7 +46,8 @@ class EHomeServer {
   bool IsReceivingFrame(const int &index) const;
 
  private:
-  LONG port_ = SMS_LISTEN_PORT;
+  std::string sms_public_ip_ = SMS_PUBLIC_IP;
+  LONG sms_port_ = SMS_LISTEN_PORT;
 
   std::vector<IPCamera> cameras_;
   std::vector<cv::Mat> frames_;
