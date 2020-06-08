@@ -12,8 +12,10 @@ option(USE_EHOME "Use EHome 4.0 SDK instead of ISUP SDK" OFF)
 if (USE_EHOME)
     message("Use EHome SDK")
     add_definitions(-DUSE_EHOME)
+    set(SDK_NAME "HCEHOMESDK")
 else (USE_EHOME)
     message("Use ISUP SDK")
+    set(SDK_NAME "HCISUPSDK")
 endif (USE_EHOME)
 
 if (${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
@@ -34,31 +36,19 @@ find_package(Threads)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/${OS_NAME}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${SDK_NAME}/${OS_NAME}/include
     ${OpenCV_INCLUDE_DIRS}
 )
-if (USE_EHOME)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCEHOMESDK/${OS_NAME}/include)
-else (USE_EHOME)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/include)
-endif (USE_EHOME)
 
 # find all thirdparty libraries
 file(GLOB_RECURSE
     playm4_libs
     ${PROJECT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/${OS_NAME}/lib/*.so
     )
-if (USE_EHOME)
-    file(GLOB_RECURSE
-        sdk_libs
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCEHOMESDK/${OS_NAME}/lib/*.so
-        )
-else (USE_EHOME)
-    file(GLOB_RECURSE
-        sdk_libs
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/*.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/HCISUPSDK/${OS_NAME}/lib/HCAapSDKCom/*.so
-        )
-endif (USE_EHOME)
+file(GLOB_RECURSE
+    sdk_libs
+    ${PROJECT_SOURCE_DIR}/thirdparty/${SDK_NAME}/${OS_NAME}/lib/*.so
+    )
 
 # find all source files
 file(GLOB_RECURSE
@@ -81,5 +71,29 @@ target_link_libraries(
     Threads::Threads
 )
 
+# installation
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+    DESTINATION include)
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION lib)
+
+file(GLOB_RECURSE
+    playm4_headers
+    ${PROJECT_SOURCE_DIR}/thirdparty/HCPLAYM4SDK/${OS_NAME}/include/*.h
+    )
+install(FILES ${playm4_headers}
+    DESTINATION include)
+install(FILES ${playm4_libs}
+    DESTINATION lib)
+
+file(GLOB_RECURSE
+    sdk_headers
+    ${PROJECT_SOURCE_DIR}/thirdparty/${SDK_NAME}/${OS_NAME}/include/*.h
+    )
+install(FILES ${sdk_headers}
+    DESTINATION include)
+install(FILES ${sdk_libs}
+    DESTINATION lib)
+
 # tests
-add_simple_test(test_demo)
+add_simple_test(test_ehome_server)

@@ -12,13 +12,6 @@ $ cmake .. -DUSE_EHOME=ON
 $ make -j
 ```
 
-Or just run
-
-```bash
-$ cd /path/to/this/repo
-$ ./scripts/build.sh
-```
-
 ## Usage
 
 1. Setup `LD_LIBRARY_PATH` 
@@ -32,10 +25,10 @@ $ ./scripts/build.sh
 
    ```bash
    $ cd /path/to/this/repo
-   $ ./scripts/install_thirdparty_libs.sh
+   $ ./scripts/install.sh
    ```
 
-2. Modify `include/config.h`
+2. (Optional) Modify `include/config.h` before building
 
 3. Setup Hikvision camera (Network -> Advanced -> Advanced Platform)
 
@@ -52,6 +45,8 @@ $ ./scripts/build.sh
    ```
 
 ## Pythin bindings
+
+0. Build and install project as mentioned above
 
 1. Build python bindings:
 
@@ -77,10 +72,10 @@ $ ./scripts/build.sh
    $ python3 test_python_bindings.py
    ```
 
-
 ## To-dos
 
 - [ ] Test with multiple devices
 - [ ] Clean code
 - [ ] Add more detailed documentation
 - [ ] Fix issues with ISUP SDK
+- [ ] Add customizable config
