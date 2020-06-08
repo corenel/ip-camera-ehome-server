@@ -5,11 +5,11 @@
 %cv_instantiate_all_defaults
 
 %{
-  #include "config.h"
-  #include "ip_camera.h"
-  #include "ehome_server.h"
+  #include "ices/config.h"
+  #include "ices/ip_camera.h"
+  #include "ices/ehome_server.h"
 %}
 
-%include "config.h"
-%include "ip_camera.h"
-%include "ehome_server.h"
+%include "ices/config.h"
+%include "ices/ip_camera.h"
+%include "ices/ehome_server.h"

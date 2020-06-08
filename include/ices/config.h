@@ -27,7 +27,7 @@
 // SMS 的端口号，需和监听端口号一致
 #define SMS_LISTEN_PORT 8000
 // 是否录制视频文件
-#define SMS_RECORD true
+#define SMS_RECORD false
 
 // CMS
 #define CMS_LISTEN_IP "0.0.0.0"

@@ -48,10 +48,17 @@ $ make -j
 
 0. Build and install project as mentioned above
 
+1. Clone `opencv-swig` next to this repo
+
+   ```bash
+   $ cd /path/to/this/repo
+   $ git clone https://github.com/smilemakc/opencv-swig.git ../opencv-swig
+   ```
+
 1. Build python bindings:
 
    ```bash
-   $ ./scripts/build_python_bindings.sh
+   $ ./scripts/install_python_bindings.sh
    ```
 
    The generated files are in `python` directory:
@@ -63,12 +70,15 @@ $ make -j
    ├── _ehome_server.so*
    ├── ehome_server_wrap.cxx
    ├── libices.so*
+   ├── requirements.txt
+   ├── setup.py
    └── test_python_bindings.py
    ```
 
-2. Run the tests (ensure the environment variable  `LD_LIBRARY_PATH` is correctly set):
+2. Run the tests:
 
    ```bash
+   $ cd python
    $ python3 test_python_bindings.py
    ```
 

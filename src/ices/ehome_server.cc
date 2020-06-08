@@ -12,7 +12,9 @@ EHomeServer::EHomeServer() {
 
   cameras_.resize(IPCS_MAX_NUM);
   frames_.resize(IPCS_MAX_NUM);
+#if (SMS_RECORD)
   video_files_.resize(IPCS_MAX_NUM);
+#endif
 
   InitCMS();
   InitSMS();
