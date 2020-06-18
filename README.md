@@ -52,7 +52,7 @@ $ make -j
 
    ```bash
    $ cd /path/to/this/repo
-   $ git clone https://github.com/smilemakc/opencv-swig.git ../opencv-swig
+   $ git clone https://github.com/renatoGarcia/opencv-swig.git ../opencv-swig
    ```
 
 1. Build python bindings:
