@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
@@ -40,10 +41,17 @@ class EHomeServer {
   const std::vector<IPCamera> &GetCameras() const;
   const std::vector<cv::Mat> &GetFrames() const;
 
+  IPCamera GetCameraByID(const std::string &device_id) const;
+  cv::Mat GetFrameByID(const std::string &device_id) const;
+  int GetCameraIndexByID(const std::string &device_id) const;
+
   // Status
   bool IsOnline(const int &index) const;
   bool IsPushingStream(const int &index) const;
   bool IsReceivingFrame(const int &index) const;
+  bool IsOnlineByID(const std::string &device_id) const;
+  bool IsPushingStreamByID(const std::string &device_id) const;
+  bool IsReceivingFrameByID(const std::string &device_id) const;
 
  private:
   std::string sms_public_ip_ = SMS_PUBLIC_IP;
@@ -51,6 +59,7 @@ class EHomeServer {
 
   std::vector<IPCamera> cameras_;
   std::vector<cv::Mat> frames_;
+  std::map<std::string, int> device_id_to_camera_index_;
 #if (SMS_RECORD)
   std::vector<FILE *> video_files_;
 #endif

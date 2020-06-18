@@ -88,8 +88,12 @@ void EHomeServer::StopCamera(const int &index) {
 }
 
 IPCamera EHomeServer::GetCamera(const int &index) const {
-  assert(index < IPCS_MAX_NUM);
+  ValidateIndex(index);
   return cameras_[index];
+}
+
+IPCamera EHomeServer::GetCameraByID(const std::string &device_id) const {
+  return GetCamera(GetCameraIndexByID(device_id));
 }
 
 const std::vector<IPCamera> &EHomeServer::GetCameras() const {
@@ -97,8 +101,21 @@ const std::vector<IPCamera> &EHomeServer::GetCameras() const {
 }
 
 cv::Mat EHomeServer::GetFrame(const int &index) const {
-  assert(index < IPCS_MAX_NUM);
+  ValidateIndex(index);
   return frames_[index];
+}
+
+cv::Mat EHomeServer::GetFrameByID(const std::string &device_id) const {
+  return GetFrame(GetCameraIndexByID(device_id));
+}
+
+int EHomeServer::GetCameraIndexByID(const std::string &device_id) const {
+  auto it = device_id_to_camera_index_.find(device_id);
+  if (it == device_id_to_camera_index_.end()) {
+    printf("Device ID (%s) Not Found\n", device_id.c_str());
+    return -1;
+  }
+  return it->second;
 }
 
 const std::vector<cv::Mat> &EHomeServer::GetFrames() const { return frames_; }
@@ -116,6 +133,18 @@ bool EHomeServer::IsPushingStream(const int &index) const {
 bool EHomeServer::IsReceivingFrame(const int &index) const {
   ValidateIndex(index);
   return !frames_[index].empty();
+}
+
+bool EHomeServer::IsOnlineByID(const std::string &device_id) const {
+  return IsOnline(GetCameraIndexByID(device_id));
+}
+
+bool EHomeServer::IsPushingStreamByID(const std::string &device_id) const {
+  return IsPushingStream(GetCameraIndexByID(device_id));
+}
+
+bool EHomeServer::IsReceivingFrameByID(const std::string &device_id) const {
+  return IsReceivingFrame(GetCameraIndexByID(device_id));
 }
 
 void EHomeServer::EventLoop() {
@@ -199,7 +228,7 @@ void EHomeServer::EventLoop() {
 }
 
 void EHomeServer::ValidateIndex(const int &index) const {
-  assert(index < IPCS_MAX_NUM);
+  assert(0 <= index && index < IPCS_MAX_NUM);
 }
 
 BOOL EHomeServer::InitCMS() {
@@ -413,6 +442,7 @@ BOOL EHomeServer::RegistrationCallBack(LONG lUserID, DWORD dwDataType,
       server_->cameras_[lUserID].device_id = device_id;
       server_->cameras_[lUserID].device_ip = pDevInfo->struDevAdd.szIP;
       server_->cameras_[lUserID].online_state = IPC_REG_STATUS::IPC_ONLINE;
+      server_->device_id_to_camera_index_[device_id] = lUserID;
       printf("On-line, lUserID: %d, Device ID: %s\n", lUserID,
              pDevInfo->byDeviceID);
       printf("\tIP: %s\n", pDevInfo->struDevAdd.szIP);
@@ -564,7 +594,7 @@ BOOL EHomeServer::PreviewNewLinkCallback(
   //  UTF82A((char *)pNewLinkCBMsg->szDeviceID, (char
   //  *)pNewLinkCBMsg->szDeviceID,
   //         MAX_DEVICE_ID_LEN, &dwConvertLen);
-  printf("Newlink from device id %s", pNewLinkCBMsg->szDeviceID);
+  printf("Newlink from device id %s\n", pNewLinkCBMsg->szDeviceID);
 
   std::string device_id(
       reinterpret_cast<char const *>(pNewLinkCBMsg->szDeviceID));

@@ -5,8 +5,10 @@
 int main() {
   std::string public_ip = "192.168.199.5";
   EHomeServer server(public_ip);
-  int camera_index = 0;
+  server.Start();
 
+  // Get status by camera index
+  int camera_index = 0;
   server.Start();
   while (true) {
     sleep(1);
@@ -16,6 +18,19 @@ int main() {
       break;
     }
   }
+
+  // Get status by camera index
+  //  std::string device_id("239250720");
+  //  while (true) {
+  //    sleep(1);
+  //    if (server.IsOnlineByID(device_id) &&
+  //        server.IsPushingStreamByID(device_id) &&
+  //        server.IsReceivingFrameByID(device_id)) {
+  //      auto frame = server.GetFrameByID(device_id);
+  //      break;
+  //    }
+  //  }
+
   server.Stop();
   return 0;
 }

@@ -18,6 +18,7 @@ cp build/libices.so python
 swig -DUSE_EHOME \
   -I../opencv-swig/lib \
   -I/usr/include \
+  -I/usr/include/opencv4 \
   -Iinclude \
   -Isrc \
   -Ithirdparty/HCEHOMESDK/linux64/include \
@@ -40,7 +41,7 @@ g++ \
   -lices \
   -lpthread \
   $(pkg-config --cflags --libs python3) \
-  $(pkg-config --libs opencv) \
+  $(pkg-config --cflags --libs opencv4) \
   --std=c++11 -Wall -O2 \
   -o python/_ehome_server.so
 

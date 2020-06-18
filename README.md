@@ -1,6 +1,12 @@
 # ip-camera-ehome-server
 EHome server for Hikvision IP camera.
 
+## Testing Environment
+
+- Ubuntu 20.04 LTS
+- Python 3.8
+- OpenCV 4.2.0
+
 ## Build
 
 Run the following commands
@@ -21,7 +27,7 @@ $ make -j
    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/thirdparty/HCPLAYM4SDK/linux64/lib:$PWD/thirdparty/HCEHOMESDK/linux64/lib
    ```
 
-   Or install libraries to `/usr/local`
+   Or install libraries to `/usr/local` （Ensure `/usr/local/lib` is in your `LD_LIBRARY_PATH`)
 
    ```bash
    $ cd /path/to/this/repo
@@ -55,7 +61,7 @@ $ make -j
    $ git clone https://github.com/renatoGarcia/opencv-swig.git ../opencv-swig
    ```
 
-1. Build python bindings:
+2. Build python bindings:
 
    ```bash
    $ ./scripts/install_python_bindings.sh
@@ -75,7 +81,30 @@ $ make -j
    └── test_python_bindings.py
    ```
 
-2. Run the tests:
+   > Modify following lines in `scripts/install_python_bindings.sh` if you're using OpenCV 3:
+   >
+   > ```diff
+   > @@ -18,6 +18,7 @@ cp build/libices.so python
+   >  swig -DUSE_EHOME \
+   >    -I../opencv-swig/lib \
+   >    -I/usr/include \
+   > -  -I/usr/include/opencv4 \
+   >    -Iinclude \
+   >    -Isrc \
+   >    -Ithirdparty/HCEHOMESDK/linux64/include \
+   > @@ -40,7 +41,7 @@ g++ \
+   >    -lices \
+   >    -lpthread \
+   >    $(pkg-config --cflags --libs python3) \
+   > -  $(pkg-config --cflags --libs opencv4) \
+   > +  $(pkg-config --cflags --libs opencv) \
+   >    --std=c++11 -Wall -O2 \
+   >    -o python/_ehome_server.so
+   > ```
+   >
+   > 
+
+3. Run the tests:
 
    ```bash
    $ cd python
